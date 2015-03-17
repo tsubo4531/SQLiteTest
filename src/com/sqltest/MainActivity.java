@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
 	private SQLiteDatabase db;
 	private EditText english, japanese, math, name;
 	private TextView sum, average, all_sum, all_average;
-	private Button btn_delete, btn_update, btn_regist;
+	private Button btn_delete, btn_update, btn_regist, btn_back;
 	private Spinner std_list;
 	private String std_name;
 	private int _id;
@@ -45,10 +45,12 @@ public class MainActivity extends Activity {
 		average = (TextView) findViewById(R.id.average_text);
 		btn_delete = (Button) findViewById(R.id.btn_delete);
 		btn_update = (Button) findViewById(R.id.btn_update);
-
+		btn_back = (Button) findViewById(R.id.btn_back);
+		
 		btn_delete.setOnClickListener(new ButtonClickListener());
 		btn_update.setOnClickListener(new ButtonClickListener());
-
+		btn_back.setOnClickListener(new ButtonClickListener());
+		
 		helper = new DatabaseHelper(this);
 		db = helper.getWritableDatabase(); // Writable‚ÈDB‚ÌƒCƒ“ƒXƒ^ƒ“ƒX¶¬
 
@@ -155,6 +157,7 @@ public class MainActivity extends Activity {
 						helper.doInsert(db, score, name.getText().toString());
 						Toast.makeText(getBaseContext(), "“o˜^‚ªŠ®—¹‚µ‚Ü‚µ‚½B",
 								Toast.LENGTH_LONG).show();
+						//“o˜^Š®—¹ŒãXV‰æ–Ê‚É‘JˆÚ
 						Intent intent = new Intent(MainActivity.this, MainActivity.class);
 						intent.putExtra("SELECTED_STD", name.getText().toString());
 						startActivity(intent);
@@ -170,6 +173,9 @@ public class MainActivity extends Activity {
 				}
 
 				// setScore(db);
+			}else if(v == btn_back){
+				Intent intent = new Intent(MainActivity.this, FirstActivity.class);
+				startActivity(intent);
 			}
 		}
 	}

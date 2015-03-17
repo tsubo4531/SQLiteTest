@@ -39,8 +39,10 @@ public class FirstActivity extends Activity {
 		std_list = (Spinner) findViewById(R.id.student_list);
 		all_cnt = (TextView) findViewById(R.id.all_cnt_text);
 
+		// 登録件数の取得およびセット
 		setAllScore(db);
 
+		// スピナーの登録
 		std_list.setAdapter(setStudentList());
 		std_list.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			@Override
@@ -68,20 +70,23 @@ public class FirstActivity extends Activity {
 	private void setAllScore(SQLiteDatabase db) {
 		Cursor c = helper.getCount(db);
 		if (c.moveToFirst() == true) {
-			if(c.getString(0).equals("0")){
-				all_cnt.setText(getString(R.string.no_data));				
-			}else{
-				all_cnt.setText(c.getString(0));				
+			if (c.getString(0).equals("0")) {
+				all_cnt.setText(getString(R.string.no_data));
+			} else {
+				all_cnt.setText(c.getString(0));
 			}
 		}
 	}
 
+	//スピナーの内部項目の設定
 	private ArrayAdapter<String> setStudentList() {
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_spinner_item);
 		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//		adapter.add("よけいなでーた");
 		adapter.add(getString(R.string.regist));
 		Cursor c = helper.getStudentName(db);
+		//カーソル内のレコード分ループ
 		while (c.moveToNext()) {
 			adapter.add(c.getString(0));
 		}
