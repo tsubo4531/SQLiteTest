@@ -1,6 +1,7 @@
 package com.sqltest;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -8,8 +9,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,15 +25,19 @@ public class MainActivity extends Activity {
 
 	private DatabaseHelper helper;
 	private SQLiteDatabase db;
-	private EditText english, japanese, math;
-	private TextView sum, average;
-	private Button btn_delete, btn_update;
+	private EditText english, japanese, math, name;
+	private TextView sum, average, all_sum, all_average;
+	private Button btn_delete, btn_update, btn_regist;
+	private Spinner std_list;
+	private String std_name;
+	private int _id;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		name = (EditText) findViewById(R.id.name_edit);
 		english = (EditText) findViewById(R.id.en_edit);
 		japanese = (EditText) findViewById(R.id.ja_edit);
 		math = (EditText) findViewById(R.id.ma_edit);
@@ -44,8 +52,24 @@ public class MainActivity extends Activity {
 		helper = new DatabaseHelper(this);
 		db = helper.getWritableDatabase(); // WritableなDBのインスタンス生成
 
+		Intent data = getIntent();
+		Bundle extras = data.getExtras();
+		std_name = extras != null ? extras.getString("SELECTED_STD") : "";
+		// 新規作成
+		if (std_name.equals(getString(R.string.regist))) {
+			btn_delete.setEnabled(false);
+			btn_update.setText(getString(R.string.regist));
+		} else {
+			// 存在しない氏名を受け取った場合はボタンを無効化
+			if (setScore(db) == false) {
+				btn_delete.setEnabled(false);
+				btn_update.setEnabled(false);
+				name.setText(getString(R.string.no_data));
+			}
+		}
+
 		// 各データセット
-		setScore(db);
+		// setScore(db);
 		// db.close();
 	}
 
@@ -80,18 +104,23 @@ public class MainActivity extends Activity {
 		return sum(c) / 3.0;
 	}
 
-	private void setScore(SQLiteDatabase db) {
-		Cursor c = helper.getScore(db);
-		c.moveToFirst();
+	private boolean setScore(SQLiteDatabase db) {
+		Cursor c = helper.getScore(db, std_name);
+		if (c.moveToFirst()) {
+			_id = c.getInt(0);
+			name.setText(c.getString(1));
+			english.setText(c.getString(2));
+			japanese.setText(c.getString(3));
+			math.setText(c.getString(4));
 
-		english.setText(c.getString(0));
-		japanese.setText(c.getString(1));
-		math.setText(c.getString(2));
+			sum.setText(Integer.toString(sum(c)));
+			average.setText(Double.toString(average(c)));
+			c.close();
 
-		sum.setText(Integer.toString(sum(c)));
-		average.setText(Double.toString(average(c)));
+			return true;
+		}
 
-		c.close();
+		return false;
 	}
 
 	private boolean checkScore(String[] score) {
@@ -112,20 +141,35 @@ public class MainActivity extends Activity {
 	class ButtonClickListener implements OnClickListener {
 		public void onClick(View v) {
 			if (v == btn_delete) {
-				helper.doDelete(db);
+				helper.doDelete(db, _id);
+				Toast.makeText(getBaseContext(), "削除が完了しました。",
+						Toast.LENGTH_LONG).show();
 				finish();
-				startActivity(getIntent());
 			} else if (v == btn_update) {
 				String score[] = { english.getText().toString(),
 						japanese.getText().toString(),
 						math.getText().toString() };
 				if (checkScore(score)) {
-					helper.doUpdate(db, score);
+					// 新規登録の場合
+					if (std_name.equals(getString(R.string.regist))) {
+						helper.doInsert(db, score, name.getText().toString());
+						Toast.makeText(getBaseContext(), "登録が完了しました。",
+								Toast.LENGTH_LONG).show();
+						Intent intent = new Intent(MainActivity.this, MainActivity.class);
+						intent.putExtra("SELECTED_STD", name.getText().toString());
+						startActivity(intent);
+					} else {
+						helper.doUpdate(db, score, name.getText().toString(),
+								_id);
+						Toast.makeText(getBaseContext(), "更新が完了しました。",
+								Toast.LENGTH_LONG).show();
+					}
 				} else {
-					Toast.makeText(getBaseContext(), "入力された値が正しくありません", Toast.LENGTH_LONG).show();
+					Toast.makeText(getBaseContext(), "入力された値が正しくありません",
+							Toast.LENGTH_LONG).show();
 				}
 
-				setScore(db);
+				// setScore(db);
 			}
 		}
 	}
